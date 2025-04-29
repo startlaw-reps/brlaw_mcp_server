@@ -24,7 +24,7 @@ async def _list_tools() -> list["Tool"]:
     return _TOOLS
 
 
-async def _call_tool(
+async def call_tool(
     name: str,
     arguments: dict[str, "Any"],  # pyright: ignore[reportExplicitAny]
 ) -> list[TextContent]:
@@ -34,6 +34,7 @@ async def _call_tool(
             return await scraper.scrape_legal_precedents(
                 wd,
                 arguments["criteria"],  # pyright: ignore[reportAny]
+                arguments["court"],  # pyright: ignore[reportAny]
             )
     raise ValueError(f"Tool {name} not found")
 
@@ -42,7 +43,7 @@ async def serve() -> None:
     server = Server("servidor_mcp_jurisprudencia")
 
     server.list_tools()(_list_tools)
-    server.call_tool()(_call_tool)
+    server.call_tool()(call_tool)
 
     options = server.create_initialization_options()
 
