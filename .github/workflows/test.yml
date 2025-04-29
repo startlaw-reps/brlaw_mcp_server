@@ -1,0 +1,51 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ruff:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: wget -qO- https://astral.sh/uv/install.sh | sh
+
+      - name: Run Ruff
+        run: uv run ruff check
+
+  basedpyright:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: wget -qO- https://astral.sh/uv/install.sh | sh
+
+      - name: Run BasedPyright
+        run: uv run basedpyright
+
+  pytest:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          wget -qO- https://astral.sh/uv/install.sh | sh
+          uv python pin "$PYTHON_VERSION"
+
+      - name: Run pytest
+        run: uv run pytest tests
