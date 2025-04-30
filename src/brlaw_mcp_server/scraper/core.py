@@ -1,5 +1,6 @@
 """Core functionality for scraping legal data from official sources."""
 
+import logging
 from typing import TYPE_CHECKING, Final, Literal
 
 from mcp.types import TextContent
@@ -14,6 +15,8 @@ if TYPE_CHECKING:
 
 NO_RESULTS_MESSAGE: Final[str] = "Nenhum resultado encontrado"
 
+_LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
+
 
 async def scrape_legal_precedents(
     wd: "WebDriver", criteria: str, court: "Literal['STJ']"
@@ -25,12 +28,21 @@ async def scrape_legal_precedents(
     :param court: The court that authored the precedent.
     :return: A list of TextContent objects explaining what was found."""
 
+    _LOGGER.info('Scraping legal precedents related to "%s" in %s', criteria, court)
+
     if court != "STJ":
         raise NotImplementedError("Only STJ is supported at the moment")  # pyright: ignore[reportUnreachable]
 
     wd.get("https://scon.stj.jus.br/SCON/")
 
-    wd.find_element(value="idMostrarPesquisaAvancada").click()
+    try:
+        wd.find_element(value="idMostrarPesquisaAvancada").click()
+    except NoSuchElementException:
+        _LOGGER.error(
+            "The scraper wasn't able to find the advanced search button: %s",
+            wd.page_source,
+        )
+        raise
 
     ementa = wd.find_element(value="ementa")
     ementa.send_keys(criteria)

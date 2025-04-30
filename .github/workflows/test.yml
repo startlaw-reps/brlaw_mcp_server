@@ -37,7 +37,7 @@ jobs:
       - name: Typecheck
         run: uv run basedpyright
 
-  pytest:
+  behaviour:
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
