@@ -40,7 +40,7 @@ async def call_tool(
 
 
 async def serve() -> None:
-    server = Server("servidor_mcp_jurisprudencia")
+    server = Server("brlaw_mcp_server")
 
     server.list_tools()(_list_tools)
     server.call_tool()(call_tool)

@@ -52,10 +52,7 @@ async def test_scraper_legal_precedents(
     import brlaw_mcp_server.scraper.core as scraper
 
     async with asyncio.timeout(MAXIMUM_SCRAPING_TIME):
-        results = await scraper.scrape_legal_precedents(
-            webdriver,
-            criteria,
-        )
+        results = await scraper.scrape_legal_precedents(webdriver, criteria, "STJ")
 
     assert max_results_len >= len(results) >= 1
     assert isinstance(results[0], TextContent)
