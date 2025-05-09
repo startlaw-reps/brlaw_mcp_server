@@ -25,6 +25,21 @@ def webdriver() -> "Generator[WebDriver, None, None]":
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
+    "court",
+    [
+        pytest.param(
+            "asdasdasdad",
+            id="unexistent_court",
+            marks=pytest.mark.xfail(
+                reason="Unexistent court.",
+                raises=ValueError,
+            ),
+        ),
+        "STJ",
+        "TJSP",
+    ],
+)
+@pytest.mark.parametrize(
     ("criteria", "max_results_len"),
     [
         pytest.param(
@@ -41,6 +56,7 @@ def webdriver() -> "Generator[WebDriver, None, None]":
 )
 async def test_scraper_legal_precedents(
     webdriver: "WebDriver",
+    court: str,
     criteria: str,
     max_results_len: int,
 ) -> None:
@@ -52,7 +68,11 @@ async def test_scraper_legal_precedents(
     import brlaw_mcp_server.scraper.core as scraper
 
     async with asyncio.timeout(MAXIMUM_SCRAPING_TIME):
-        results = await scraper.scrape_legal_precedents(webdriver, criteria, "STJ")
+        results = await scraper.scrape_legal_precedents(
+            webdriver,
+            criteria,
+            court,  # pyright: ignore[reportArgumentType]
+        )
 
     assert max_results_len >= len(results) >= 1
     assert isinstance(results[0], TextContent)
