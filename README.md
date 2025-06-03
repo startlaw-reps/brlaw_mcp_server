@@ -17,7 +17,12 @@ A MCP (Model Context Protocol) server for agent-driven research on Brazilian law
 git clone https://github.com/pdmtt/brlaw_mcp_server.git
 ```
 
-2. Setup your MCP client (e.g. Claude Desktop):
+2. Install the dependencies
+```bash
+uv run patchright install
+```
+
+3. Setup your MCP client (e.g. Claude Desktop):
 ```json
 {
   "mcpServers": {
