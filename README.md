@@ -27,7 +27,7 @@ git clone https://github.com/pdmtt/brlaw_mcp_server.git
         "--directory",
         "/<path>/brlaw_mcp_server",
         "run",
-        "brlaw_mcp_server"
+        "serve"
       ]
     }
   }
@@ -36,7 +36,8 @@ git clone https://github.com/pdmtt/brlaw_mcp_server.git
 
 ### Available Tools
 
-- `pesquisar_precedentes_judiciais`: Research legal precedents that meet the specified criteria.
+- `precedentes-stj`: Research legal precedents made by the National High Court of Brazil (STJ) that 
+  meet the specified criteria.
 
 ## Development
 
