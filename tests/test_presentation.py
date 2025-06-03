@@ -16,16 +16,8 @@ import pytest
             id="invalid_tool_name",
         ),
         pytest.param(
-            "pesquisar_precedentes_judiciais",
-            {"criteria": "test criteria"},
-            marks=pytest.mark.xfail(
-                strict=True, reason="Missing court argument", raises=AssertionError
-            ),
-            id="missing_court_argument",
-        ),
-        pytest.param(
-            "pesquisar_precedentes_judiciais",
-            {"criteria": "test criteria", "court": "STJ"},
+            "precedentes-stj",
+            {"summary": "fraude execução"},
             id="valid_tool_call",
         ),
     ],
@@ -49,7 +41,7 @@ async def test_call_tool(
                     "--directory",
                     str(Path(__file__).parent.parent.absolute()),
                     "run",
-                    "brlaw_mcp_server",
+                    "serve",
                 ],
             )
         ) as (read, write),

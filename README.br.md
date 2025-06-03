@@ -26,7 +26,7 @@ git clone https://github.com/pdmtt/brlaw_mcp_server.git
         "--directory",
         "/<caminho>/brlaw_mcp_server",
         "run",
-        "brlaw_mcp_server"
+        "serve"
       ]
     }
   }
@@ -35,7 +35,8 @@ git clone https://github.com/pdmtt/brlaw_mcp_server.git
 
 ### Ferramentas Disponíveis
 
-- `pesquisar_precedentes_judiciais`: Pesquisa precedentes judiciais que atendam aos critérios especificados.
+- `precedentes-stj`: Pesquisa precedentes judiciais feitos pelo Superior Tribunal de Justiça (STJ) 
+  que atendam aos critérios especificados.
 
 ## Desenvolvimento
 
