@@ -150,6 +150,13 @@ class StjLegalPrecedentsRequest(BaseModel):
         ],
     )
 
+    page: int = Field(
+        title="Página",
+        description="A página dos resultados a ser retornada. Cada página contém 10 resultados.",
+        ge=1,
+        default=1,
+    )
+
 
 _TOOLS: Final[list[Tool]] = [
     Tool(
@@ -178,7 +185,7 @@ async def call_tool(
 
             precedents = await StjLegalPrecedent.research(
                 page,
-                summary=requisicao.summary,
+                summary_search_prompt=requisicao.summary,
             )
 
         if len(precedents) == 0:

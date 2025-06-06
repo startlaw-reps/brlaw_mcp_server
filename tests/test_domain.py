@@ -34,12 +34,17 @@ async def test_research_stj_legal_precedents(
     async with asyncio.timeout(30), async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless="CI" in environ)
         page = await browser.new_page()
-        precedents = await StjLegalPrecedent.research(
-            page,
-            summary=summary,
-        )
 
-    assert max_results_len >= len(precedents) >= 0
+        for desired_results_page in range(1, 3):
+            precedents = await StjLegalPrecedent.research(
+                page,
+                summary_search_prompt=summary,
+                desired_page=desired_results_page,
+            )
 
-    for precedent in precedents:
-        assert isinstance(precedent, StjLegalPrecedent)
+            assert max_results_len >= len(precedents) >= 0
+            if max_results_len == 0:
+                return
+
+            for precedent in precedents:
+                assert isinstance(precedent, StjLegalPrecedent)
