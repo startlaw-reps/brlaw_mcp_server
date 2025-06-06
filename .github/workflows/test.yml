@@ -65,5 +65,5 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
         run: |
           uv python pin "$PYTHON_VERSION"
-          uv run playwright install
+          uv run patchright install chromium
           uv run pytest tests
