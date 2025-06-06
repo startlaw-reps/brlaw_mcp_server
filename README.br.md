@@ -16,7 +16,12 @@ de IA.
 git clone https://github.com/pdmtt/brlaw_mcp_server.git
 ```
 
-2. Configure seu cliente MCP (ex: Claude Desktop):
+2. Instale as dependências
+```bash
+uv run patchright install
+```
+
+3. Configure seu cliente MCP (ex: Claude Desktop):
 ```json
 {
   "mcpServers": {
