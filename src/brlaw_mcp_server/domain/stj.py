@@ -1,3 +1,4 @@
+import logging
 import textwrap
 from typing import TYPE_CHECKING, Self
 
@@ -5,7 +6,9 @@ from patchright.async_api import TimeoutError
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
-    from patchright.async_api import Page
+    from patchright.async_api import Locator, Page
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class StjLegalPrecedent(BaseModel):
@@ -50,24 +53,21 @@ class StjLegalPrecedent(BaseModel):
         """Validate the summary of the legal precedent."""
         return v.strip()
 
-    @classmethod
-    async def research(cls, page: "Page", *, summary: str) -> "list[Self]":
-        """Scrape legal precedents from the Superior Tribunal de Justiça (STJ)."""
-
-        await page.goto("https://scon.stj.jus.br/SCON/")
-        await page.locator("#idMostrarPesquisaAvancada").click()
-
-        summary_input_locator = page.locator("#ementa")
-        await summary_input_locator.fill(summary)
-        await summary_input_locator.press("Enter")
-
-        raw_summaries_locators = await page.locator(
+    @staticmethod
+    async def _get_raw_summary_locators(browser: "Page") -> "list[Locator]":
+        """Get the locators of the raw summaries shown on the current page."""
+        raw_summary_locators = await browser.locator(
             "textarea[id^=textSemformatacao]"
         ).all()
 
-        if len(raw_summaries_locators) == 0:
+        _LOGGER.debug(
+            "Found %d raw summary locators on the current page",
+            len(raw_summary_locators),
+        )
+
+        if len(raw_summary_locators) == 0:
             try:
-                error_message = await page.locator("div.erroMensagem").text_content()
+                error_message = await browser.locator("div.erroMensagem").text_content()
             except TimeoutError as e:
                 raise RuntimeError(
                     "Unexpected behavior from the requested service"
@@ -79,8 +79,52 @@ class StjLegalPrecedent(BaseModel):
             ):
                 return []
 
+        return raw_summary_locators
+
+    @classmethod
+    async def research(
+        cls, browser: "Page", *, summary_search_prompt: str, desired_page: int = 1
+    ) -> "list[Self]":
+        """Scrape legal precedents from the Superior Tribunal de Justiça's (STJ)
+        search engine.
+
+        :param browser: The browser to use.
+        :param summary_search_prompt: The summary to search for.
+        :param desired_page: The page of results to scrape.
+        :return: A list of legal precedents."""
+
+        _LOGGER.info(
+            "Starting research for legal precedents authored by the STJ with the summary search prompt %s",
+            repr(summary_search_prompt),
+        )
+
+        await browser.goto("https://scon.stj.jus.br/SCON/")
+        browser.set_default_timeout(5000)
+
+        await browser.locator("#idMostrarPesquisaAvancada").click()
+
+        summary_input_locator = browser.locator("#ementa")
+        await summary_input_locator.fill(summary_search_prompt)
+        await summary_input_locator.press("Enter")
+
+        await browser.locator("#corpopaginajurisprudencia").wait_for(state="visible")
+
+        raw_summary_locators = await cls._get_raw_summary_locators(browser)
+
+        current_page = 1
+        while current_page != desired_page:
+            next_page_anchor_locators = await browser.locator(
+                "a.iconeProximaPagina"
+            ).all()
+            await next_page_anchor_locators[0].click()
+
+            await raw_summary_locators[0].wait_for(state="detached")
+            raw_summary_locators = await cls._get_raw_summary_locators(browser)
+
+            current_page += 1
+
         return [
             cls(summary=text)
-            for locator in raw_summaries_locators
+            for locator in raw_summary_locators
             if (text := await locator.text_content()) is not None
         ]
