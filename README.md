@@ -41,8 +41,10 @@ uv run patchright install
 
 ### Available Tools
 
-- `precedentes-stj`: Research legal precedents made by the National High Court of Brazil (STJ) that 
-  meet the specified criteria.
+- `StjLegalPrecedentsRequest`: Research legal precedents made by the National High Court of Brazil 
+  (STJ) that meet the specified criteria.
+- `TstLegalPrecedentsRequest`: Research legal precedents made by the National High Labor Court of 
+  Brazil (TST) that meet the specified criteria.
 
 ## Development
 
