@@ -2,6 +2,8 @@
 
 import pytest
 
+from brlaw_mcp_server.presentation.mcp import StjLegalPrecedentsRequest
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -16,7 +18,7 @@ import pytest
             id="invalid_tool_name",
         ),
         pytest.param(
-            "precedentes-stj",
+            StjLegalPrecedentsRequest.__name__,
             {"summary": "fraude execução"},
             id="valid_tool_call",
         ),
@@ -26,7 +28,12 @@ async def test_call_tool(
     tool_name: str,
     arguments: dict[str, str],
 ) -> None:
-    """Test calling a server's tool."""
+    """Test calling a server's tool.
+
+    The purpose of this test is to ensure that the server is able to call the tool
+    and return the correct results.
+
+    There's no need to test the tools themselves, as they are tested in the domain tests."""
     from pathlib import Path
 
     from mcp import ClientSession, StdioServerParameters

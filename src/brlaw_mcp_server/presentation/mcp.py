@@ -9,13 +9,28 @@ from patchright.async_api import async_playwright
 from pydantic import BaseModel, Field
 
 from brlaw_mcp_server.domain.stj import StjLegalPrecedent
+from brlaw_mcp_server.domain.tst import TstLegalPrecedent
 
 
-class StjLegalPrecedentsRequest(BaseModel):
-    """Requisição dos precedentes judiciais do STJ que satisfaçam os critérios passados.
+class BaseLegalPrecedentsRequest(BaseModel):
+    """Common model for all legal precedents requests."""
 
-    STJ é o Superior Tribunal de Justiça do Brasil, autoridade máxima na interpretação da legislação
-    federal infraconstitucional."""
+    page: int = Field(
+        title="Página",
+        description=(
+            "A página dos resultados a ser retornada. Cada página alguns resultados. "
+            + "É útil requisitar mais de uma página para conseguir mais informações, se necessário."
+        ),
+        ge=1,
+        default=1,
+    )
+
+
+class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
+    """Requisição dos precedentes judiciais do Superior Tribunal de Justiça (STJ) que satisfaçam os critérios passados.
+
+    O STJ é a autoridade máxima na interpretação da legislação federal infraconstitucional, o que
+    exclui a Constituição Federal."""
 
     summary: str = Field(
         title="Ementa",
@@ -150,20 +165,34 @@ class StjLegalPrecedentsRequest(BaseModel):
         ],
     )
 
-    page: int = Field(
-        title="Página",
-        description="A página dos resultados a ser retornada. Cada página contém 10 resultados.",
-        ge=1,
-        default=1,
+
+class TstLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
+    """Requisição dos precedentes judiciais do Superior Tribunal de Justiça (STJ) que satisfaçam os critérios passados.
+
+    O STJ é a autoridade máxima na interpretação da legislação federal infraconstitucional, o que
+    exclui a Constituição Federal."""
+
+    summary: str = Field(
+        title="Ementa",
+        description=textwrap.dedent("""
+        Critérios que serão buscados na ementa das decisões desejadas.
+
+        É admitido o uso de aspas e elas devem ser empregadas para pesquisas exatas de expressões ou 
+        palavras compostas."""),
+        min_length=1,
+        examples=[
+            "trabalho temporário jornada “adicional de periculosidade”",
+        ],
     )
 
 
 _TOOLS: Final[list[Tool]] = [
     Tool(
-        name="precedentes-stj",
-        description="Pesquisa os precedentes judiciais do STJ que satisfaçam os critérios passados",
-        inputSchema=StjLegalPrecedentsRequest.model_json_schema(),
+        name=model.__name__,
+        description=model.__doc__,
+        inputSchema=model.model_json_schema(),
     )
+    for model in [StjLegalPrecedentsRequest, TstLegalPrecedentsRequest]
 ]
 
 
@@ -176,27 +205,34 @@ async def call_tool(
     arguments: dict[str, "Any"],  # pyright: ignore[reportExplicitAny]
 ) -> list[TextContent]:
     """Handles a tool call from a MCP client."""
-    if name == "precedentes-stj":
-        requisicao = StjLegalPrecedentsRequest(**arguments)  # pyright: ignore[reportAny]
+    match name:
+        case StjLegalPrecedentsRequest.__name__:
+            request = StjLegalPrecedentsRequest(**arguments)  # pyright: ignore[reportAny]
+            method = StjLegalPrecedent.research
+        case TstLegalPrecedentsRequest.__name__:
+            request = TstLegalPrecedentsRequest(**arguments)  # pyright: ignore[reportAny]
+            method = TstLegalPrecedent.research
+        case _:
+            raise ValueError(f"Tool {name} not found")
 
-        async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch(headless=True)
-            page = await browser.new_page()
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch(headless=True)
+        page = await browser.new_page()
 
-            precedents = await StjLegalPrecedent.research(
-                page,
-                summary_search_prompt=requisicao.summary,
-            )
+        precedents = await method(
+            page,
+            summary_search_prompt=request.summary,
+            desired_page=request.page,
+        )
 
-        if len(precedents) == 0:
-            return [TextContent(type="text", text="Nenhum resultado encontrado")]
-
-        return [
+    return (
+        [
             TextContent(type="text", text=precedent.model_dump_json())
             for precedent in precedents
         ]
-
-    raise ValueError(f"Tool {name} not found")
+        if precedents
+        else [TextContent(type="text", text="Nenhum resultado encontrado")]
+    )
 
 
 async def _serve() -> None:

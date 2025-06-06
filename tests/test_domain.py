@@ -4,47 +4,50 @@ from os import environ
 import pytest
 from patchright.async_api import async_playwright
 
+from brlaw_mcp_server.domain.base import BaseLegalPrecedent
 from brlaw_mcp_server.domain.stj import StjLegalPrecedent
+from brlaw_mcp_server.domain.tst import TstLegalPrecedent
 
 
 @pytest.mark.parametrize(
-    ("summary", "max_results_len"),
+    ("summary", "should_return_results"),
     [
         pytest.param(
             "asdjnaskjdnaajhsbajkhsdjkabsndk12931092381902098",  # Bogus criteria
-            0,
-            id="no_results",
+            False,
+            id="should_not_return_results",
         ),
         pytest.param(
             "fraude execução",  # Criteria known to return results.
-            20,
-            id="has_results",
+            True,
+            id="should_return_results",
         ),
     ],
 )
-async def test_research_stj_legal_precedents(
+@pytest.mark.parametrize("class_", [StjLegalPrecedent, TstLegalPrecedent])
+async def test_research_legal_precedents(
     summary: str,
-    max_results_len: int,
+    should_return_results: bool,
+    class_: type[BaseLegalPrecedent],
 ) -> None:
     """Test the research method of the STJLegalPrecedent class.
 
     :param summary: The summary to search for.
-    :param max_results_len: The maximum number of results to expect."""
+    :param should_return_results: Whether the research should return results."""
 
     async with asyncio.timeout(30), async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless="CI" in environ)
         page = await browser.new_page()
 
         for desired_results_page in range(1, 3):
-            precedents = await StjLegalPrecedent.research(
+            precedents = await class_.research(
                 page,
                 summary_search_prompt=summary,
                 desired_page=desired_results_page,
             )
 
-            assert max_results_len >= len(precedents) >= 0
-            if max_results_len == 0:
+            assert should_return_results == bool(precedents)
+            if not should_return_results:
                 return
 
-            for precedent in precedents:
-                assert isinstance(precedent, StjLegalPrecedent)
+            assert all(isinstance(precedent, class_) for precedent in precedents)
