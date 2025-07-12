@@ -17,10 +17,16 @@ class BaseLegalPrecedentsRequest(BaseModel):
 
     page: int = Field(
         title="Página",
-        description=(
-            "A página dos resultados a ser retornada. Cada página alguns resultados. "
-            + "É útil requisitar mais de uma página para conseguir mais informações, se necessário."
-        ),
+        description=textwrap.dedent("""
+            A página dos resultados a ser retornada. 
+            
+            Cada página contém uma fração dos resultados da pesquisa. A página 1 é a primeira 
+            página dos resultados.
+
+            É útil requisitar mais de uma página para conseguir mais informações, se necessário.
+            Por exemplo, se os resultados retornados pela página anteriormente requisitada forem 
+            pertinentes, mas não satisfatórios, é adequado requisitar a página seguinte para obter 
+            mais precedentes relacionados."""),
         ge=1,
         default=1,
     )

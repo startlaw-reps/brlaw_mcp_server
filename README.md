@@ -2,7 +2,15 @@
 
 [🇧🇷 Leia em português](README.br.md)
 
-A MCP (Model Context Protocol) server for agent-driven research on Brazilian law.
+A MCP (Model Context Protocol) server for agent-driven research on Brazilian law using official 
+sources.
+
+## Foreword
+This server empowers models with scraping capacities, thus making research easier to anyone 
+legitimately interested in Brazilian legal matters. 
+
+This facility comes with a price: the risk of overloading the official sources' servers if misused.
+Please be sure to keep the load on the sources to a reasonable amount.
 
 ## Requirements
 

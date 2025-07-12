@@ -33,7 +33,7 @@ async def test_call_tool(
     The purpose of this test is to ensure that the server is able to call the tool
     and return the correct results.
 
-    There's no need to test the tools themselves, as they are tested in the domain tests."""
+    There's no need to test the tools themselves, as they are tested in the domain's tests."""
     from pathlib import Path
 
     from mcp import ClientSession, StdioServerParameters

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Self, override
 from patchright.async_api import TimeoutError
 from pydantic import field_validator
 
-from brlaw_mcp_server.domain.base import BaseLegalPrecedent
+from brlaw_mcp_server.domain._base import BaseLegalPrecedent
 
 if TYPE_CHECKING:
     from patchright.async_api import Page
@@ -41,19 +41,10 @@ class TstLegalPrecedent(BaseLegalPrecedent):
     async def research(
         cls, browser: "Page", *, summary_search_prompt: str, desired_page: int = 1
     ) -> "list[Self]":
-        """Scrape legal precedents from the Court's search engine.
-
-        :param browser: The browser to use.
-        :param summary_search_prompt: The summary to search for.
-        :param desired_page: The page of results to scrape.
-        :return: A list of legal precedents."""
-
         _LOGGER.info(
             "Starting research for legal precedents authored by the TST with the summary search prompt %s",
             repr(summary_search_prompt),
         )
-
-        browser.set_default_timeout(5000)
 
         await browser.goto("https://jurisprudencia.tst.jus.br/")
 

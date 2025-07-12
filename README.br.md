@@ -1,13 +1,22 @@
 # Servidor MCP de Pesquisa em Direito Brasileiro
 
+[🇺🇸 Read in English](README.md)
+
 Um servidor MCP (Model Context Protocol) para pesquisa sobre direito brasileiro movida por agentes 
-de IA.
+de IA usando fontes oficiais.
+
+## Prefácio
+Este servidor capacita modelos com capacidades de scraping, facilitando assim a pesquisa para 
+qualquer pessoa legitimamente interessada em questões jurídicas brasileiras.
+
+Esta facilidade vem com um preço: o risco de sobrecarregar os servidores das fontes oficiais se 
+mal utilizada. Por favor, mantenha a carga nas fontes em uma quantidade razoável.
 
 ## Requisitos
 
-- Python 3.11 ou superior
+- git
+- uv (recomendado) ou Python >= 3.11
 - Google Chrome
-- uv (recomendado)
 
 ## Como usar
 
