@@ -15,7 +15,7 @@ mal utilizada. Por favor, mantenha a carga nas fontes em uma quantidade razoáve
 ## Requisitos
 
 - git
-- uv (recomendado) ou Python >= 3.11
+- uv (recomendado) ou Python >= 3.12
 - Google Chrome
 
 ## Como usar
@@ -53,6 +53,8 @@ uv run patchright install
   Justiça (STJ) que atendam aos critérios especificados.
 - `TstLegalPrecedentsRequest`: Pesquisa precedentes judiciais feitos pelo Tribunal Superior do 
   Trabalho (TST) que atendam aos critérios especificados.
+- `StfLegalPrecedentsRequest`: Pesquisa precedentes judiciais feitos pelo Supremo Tribunal Federal 
+  (STF) que atendam aos critérios especificados.
 
 ## Desenvolvimento
 

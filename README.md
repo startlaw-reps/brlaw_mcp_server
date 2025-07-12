@@ -15,7 +15,7 @@ Please be sure to keep the load on the sources to a reasonable amount.
 ## Requirements
 
 - git
-- uv (recommended) or Python >= 3.11
+- uv (recommended) or Python >= 3.12
 - Google Chrome
 
 ## How to use
@@ -53,6 +53,8 @@ uv run patchright install
   (STJ) that meet the specified criteria.
 - `TstLegalPrecedentsRequest`: Research legal precedents made by the National High Labor Court of 
   Brazil (TST) that meet the specified criteria.
+- `StfLegalPrecedentsRequest`: Research legal precedents made by the Supreme Court (STF) that meet 
+  the specified criteria.
 
 ## Development
 
