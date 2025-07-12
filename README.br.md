@@ -53,6 +53,8 @@ uv run patchright install
   Justiça (STJ) que atendam aos critérios especificados.
 - `TstLegalPrecedentsRequest`: Pesquisa precedentes judiciais feitos pelo Tribunal Superior do 
   Trabalho (TST) que atendam aos critérios especificados.
+- `StfLegalPrecedentsRequest`: Pesquisa precedentes judiciais feitos pelo Supremo Tribunal Federal 
+  (STF) que atendam aos critérios especificados.
 
 ## Desenvolvimento
 

@@ -53,6 +53,8 @@ uv run patchright install
   (STJ) that meet the specified criteria.
 - `TstLegalPrecedentsRequest`: Research legal precedents made by the National High Labor Court of 
   Brazil (TST) that meet the specified criteria.
+- `StfLegalPrecedentsRequest`: Research legal precedents made by the Supreme Court (STF) that meet 
+  the specified criteria.
 
 ## Development
 
