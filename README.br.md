@@ -15,7 +15,7 @@ mal utilizada. Por favor, mantenha a carga nas fontes em uma quantidade razoáve
 ## Requisitos
 
 - git
-- uv (recomendado) ou Python >= 3.11
+- uv (recomendado) ou Python >= 3.12
 - Google Chrome
 
 ## Como usar

@@ -15,7 +15,7 @@ Please be sure to keep the load on the sources to a reasonable amount.
 ## Requirements
 
 - git
-- uv (recommended) or Python >= 3.11
+- uv (recommended) or Python >= 3.12
 - Google Chrome
 
 ## How to use
