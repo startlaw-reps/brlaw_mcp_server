@@ -1,3 +1,8 @@
+"""Base classes and utilities for legal precedents.
+
+This module contains the base classes and utilities used by the legal precedents
+domain models, including validation and common fields."""
+
 import textwrap
 from typing import TYPE_CHECKING, Self
 

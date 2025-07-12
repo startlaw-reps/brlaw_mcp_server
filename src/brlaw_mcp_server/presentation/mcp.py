@@ -17,10 +17,16 @@ class BaseLegalPrecedentsRequest(BaseModel):
 
     page: int = Field(
         title="Página",
-        description=(
-            "A página dos resultados a ser retornada. Cada página alguns resultados. "
-            + "É útil requisitar mais de uma página para conseguir mais informações, se necessário."
-        ),
+        description=textwrap.dedent("""
+            A página dos resultados a ser retornada. 
+            
+            Cada página contém uma fração dos resultados da pesquisa. A página 1 é a primeira 
+            página dos resultados.
+
+            É útil requisitar mais de uma página para conseguir mais informações, se necessário.
+            Por exemplo, se os resultados retornados pela página anteriormente requisitada forem 
+            pertinentes, mas não satisfatórios, é adequado requisitar a página seguinte para obter 
+            mais precedentes relacionados."""),
         ge=1,
         default=1,
     )
@@ -29,8 +35,19 @@ class BaseLegalPrecedentsRequest(BaseModel):
 class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
     """Requisição dos precedentes judiciais do Superior Tribunal de Justiça (STJ) que satisfaçam os critérios passados.
 
-    O STJ é a autoridade máxima na interpretação da legislação federal infraconstitucional, o que
-    exclui a Constituição Federal."""
+    O STJ é a instância máxima da justiça brasileira no âmbito infraconstitucional. É a Corte
+    responsável por uniformizar a interpretação da lei federal em todo o País.
+
+    Produz decisões que influenciam todos os aspectos da vida cotidiana dos cidadãos, a maioria
+    envolvendo causas de competência da chamada Justiça Comum.
+
+    É de sua responsabilidade a solução definitiva de casos civis e criminais que não envolvam
+    matéria constitucional, sob reserva do Supremo Tribunal Federal (STF), nem questões afetas ao
+    âmbito específico da Justiça do Trabalho, da Justiça Eleitoral ou da Justiça Militar.
+
+    Cabe também ao STJ a apreciação de decisões judiciais emitidas no exterior, entre as quais
+    cartas rogatórias, pedidos de homologação de decisões estrangeiras e ações em que há contestação
+    de sentença proferida fora do país."""
 
     summary: str = Field(
         title="Ementa",
@@ -49,6 +66,10 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         RESULTADO: o sistema buscará documentos que contenham as três palavras, em qualquer ordem ou 
         distância.
+
+        ATENÇÃO: esse é o operador presumido entre duas palavras, quando não houver outro operador 
+        explícito. Assim, não é necessário explicitá-lo nesses casos. Por exemplo, `supermercado e 
+        furto` é o mesmo que `supermercado furto`.
 
         ### `ou`
         Localiza um e/ou outro termo. Os termos devem vir sempre entre parênteses.
@@ -167,10 +188,10 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
 
 class TstLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
-    """Requisição dos precedentes judiciais do Superior Tribunal de Justiça (STJ) que satisfaçam os critérios passados.
+    """Requisição dos precedentes judiciais do Tribunal Superior do Trabalho (TST) que satisfaçam os critérios passados.
 
-    O STJ é a autoridade máxima na interpretação da legislação federal infraconstitucional, o que
-    exclui a Constituição Federal."""
+    O TST é o órgão de cúpula da Justiça do Trabalho. Tem a função precípua de uniformizar a
+    jurisprudência trabalhista brasileira."""
 
     summary: str = Field(
         title="Ementa",
@@ -186,13 +207,143 @@ class TstLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
     )
 
 
+class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
+    """Requisição dos precedentes judiciais do Supremo Tribunal Federal (STF) que satisfaçam os critérios passados.
+
+    O STF é o órgão máximo do Poder Judiciário brasileiro, e a ele compete, precipuamente, zelar
+    pelo cumprimento da Constituição, conforme definido em seu art. 102. Por esse motivo, o STF é
+    conhecido como o Guardião da Constituição Federal.
+
+    Entre suas principais atribuições está a de julgar a ação direta de inconstitucionalidade de
+    lei ou ato normativo federal ou estadual, a ação declaratória de constitucionalidade de lei ou
+    ato normativo federal, a arguição de descumprimento de preceito fundamental decorrente da
+    própria Constituição e a extradição solicitada por Estado estrangeiro.
+
+    Na área penal, destaca-se a competência para julgar, nas infrações penais comuns, o presidente
+    da República, o vice-presidente, os membros do Congresso Nacional, seus próprios ministros e o
+    procurador-geral da República, entre outros."""
+
+    summary: str = Field(
+        title="Ementa",
+        description=textwrap.dedent("""
+        Critérios que serão buscados na ementa das decisões desejadas.
+
+        É possível utilizar operadores textuais para aumentar a assertividade da busca. Na ausência 
+        de qualquer operador explícito entre duas palavras, o sistema presumirá o operador `e`.
+        Ou seja, `supermercado furto veículo` é o mesmo que `supermercado e furto e veículo`.
+
+        ## `e`
+        Todos os termos devem necessariamente aparecer no documento.
+
+        EXEMPLO: direitos E humanos
+
+        ATENÇÃO: por se tratar do operador padrão, não é necessário explicitar o E na expressão de 
+        busca.
+
+        ## `ou`
+        Ao menos um dos termos deve aparecer no documento.
+
+        EXEMPLO: droga OU entorpecente
+
+        ## `não`
+        O termo adjacente não pode aparecer no documento.
+
+        EXEMPLO: prisão NÃO preventiva
+
+        EFEITO: no caso do exemplo, o sistema buscará documentos que envolvam prisões que NÃO sejam 
+        preventivas.
+
+        ## `" "`
+        Os termos devem aparecer no documento na exata ordem e com a exata grafia indicadas.
+
+        EXEMPLO: "princípio da presunção de inocência"
+
+        ATENÇÃO: os operadores contidos dentro das aspas perdem a função de operador lógico. Assim, 
+        `"direitos E humanos"` não é o mesmo que `direitos E humanos`.
+
+        ## `" "~`
+        Os termos podem aparecer no documento em qualquer ordem, desde que estejam separados, no 
+        máximo, pelo número de palavras indicado após o til.
+
+        EXEMPLO: "provimento cargo"~5
+
+        EFEITO: no caso do exemplo, o sistema buscará quaisquer documentos que contenham as palavras 
+        `provimento` e `cargo` separadas por entre zero e cinco palavras. As seguintes expressões 
+        seriam consideradas válidas:
+        - provimento cargo
+        - cargo provimento
+        - provimento de cargo
+        - cargo teve o seu provimento
+
+        ATENÇÃO: dentro dessa estrutura (aspas duplas + til), os únicos operadores admitidos são o 
+        `OU` e os parênteses; todos os demais (`E`, `NÃO`, `~`, `$`, `?`) são anulados.
+
+        ## `~`
+        Quando posicionado logo após determinada palavra, o til permite o resgate de documentos que 
+        contenham pequenas variações do termo pesquisado.
+
+        O número de variações toleradas depende do número de caracteres do termo pesquisado: 
+        - até 3 caracteres, o operador til não produz efeito
+        - entre 4 e 6 caracteres, o operador admite 1 variação
+        - com mais de 6 caracteres, a busca contempla 2 variações
+
+        Conta-se como 1 variação: 
+        - a troca de um caractere por outro (exemplo: de triagem para friagem)
+        - a remoção de um caractere (exemplo: de místico para mítico)
+        - a inserção de um caractere (exemplo: de recorre para recorrer)
+        - a troca de posição de dois caracteres adjacentes (exemplo: de 598356 para 598365)
+
+        EXEMPLO: amaldiçoado~
+
+        EFEITO: no caso do exemplo, o sistema buscará documentos que contenham a palavra 
+        `amaldiçoado` e outras que possam ser criadas a partir de até duas variações, pois a 
+        palavra-base tem mais de 6 caracteres. As seguintes expressões seriam consideradas válidas:
+        - amaldiçoado
+        - amaldiçoados
+        - amaldiçoada
+        - amaldiçoadas
+
+        ## `$`
+        O sinal de dólar substitui um, nenhum ou mais de um caractere no início, no meio ou no final 
+        do termo.
+
+        EXEMPLO: $classificado
+
+        ## `?`
+        O ponto de interrogação substitui um único caractere no início, no meio ou no final do 
+        termo.
+
+        EXEMPLO: RE 56394?
+
+        ## `( )`
+        Os parênteses indicam a ordem de prioridade das operações, quando utilizado mais de um 
+        operador.
+
+        EXEMPLO: direito E (privacidade OU intimidade)
+
+        EFEITO: no caso do exemplo, o sistema buscará documentos que contenham tanto a palavra 
+        `direito` quanto uma das duas palavras `privacidade` ou `intimidade`."""),
+        min_length=1,
+        examples=[
+            "direito E (privacidade OU intimidade)",
+            "amaldiçoado~",
+            "$classificado",
+            "RE 56394?",
+        ],
+    )
+
+
 _TOOLS: Final[list[Tool]] = [
     Tool(
         name=model.__name__,
         description=model.__doc__,
         inputSchema=model.model_json_schema(),
     )
-    for model in [StjLegalPrecedentsRequest, TstLegalPrecedentsRequest]
+    for model in [
+        StjLegalPrecedentsRequest,
+        TstLegalPrecedentsRequest,
+        StfLegalPrecedentsRequest,
+    ]
 ]
 
 
