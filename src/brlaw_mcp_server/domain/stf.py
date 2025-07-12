@@ -1,6 +1,6 @@
 import logging
 import urllib.parse
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Self, cast, override
 
 from brlaw_mcp_server.domain._base import BaseLegalPrecedent
 
@@ -69,7 +69,7 @@ class StfLegalPrecedent(BaseLegalPrecedent):
             handle = await browser.evaluate_handle(
                 "() => navigator.clipboard.readText()"
             )
-            summary: str = await handle.json_value()
+            summary = cast("str", await handle.json_value())
 
             return_value.append(
                 cls(
