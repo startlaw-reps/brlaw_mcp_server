@@ -1,8 +1,27 @@
 """Tests for the core server functionality."""
 
 import pytest
+from pydantic import ValidationError
 
 from brlaw_mcp_server.presentation.mcp import StjLegalPrecedentsRequest
+
+
+@pytest.mark.asyncio
+async def test_listed_tools() -> None:
+    """Test all listed tools."""
+    from brlaw_mcp_server.presentation.mcp import call_tool, list_tools
+
+    tools = await list_tools()
+    assert len(tools) > 0
+    for tool in tools:
+        assert tool.name is not None
+        assert tool.description is not None
+        assert tool.inputSchema is not None
+
+        # It is expected that all tools will raise a ValidationError if no arguments are provided,
+        # because all of them expect at least one argument.
+        with pytest.raises(ValidationError):
+            await call_tool(tool.name, {})
 
 
 @pytest.mark.asyncio
