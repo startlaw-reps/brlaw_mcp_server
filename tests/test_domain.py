@@ -4,7 +4,7 @@ from os import environ
 import pytest
 from patchright.async_api import async_playwright
 
-from brlaw_mcp_server.domain._base import BaseLegalPrecedent
+from brlaw_mcp_server.domain.base import BaseLegalPrecedent
 from brlaw_mcp_server.domain.stf import StfLegalPrecedent
 from brlaw_mcp_server.domain.stj import StjLegalPrecedent
 from brlaw_mcp_server.domain.tst import TstLegalPrecedent

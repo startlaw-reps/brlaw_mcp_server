@@ -8,6 +8,8 @@ from mcp.types import TextContent, Tool
 from patchright.async_api import async_playwright
 from pydantic import BaseModel, Field
 
+from brlaw_mcp_server.domain.base import BaseLegalPrecedent
+from brlaw_mcp_server.domain.stf import StfLegalPrecedent
 from brlaw_mcp_server.domain.stj import StjLegalPrecedent
 from brlaw_mcp_server.domain.tst import TstLegalPrecedent
 
@@ -333,22 +335,37 @@ class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
     )
 
 
-_TOOLS: Final[list[Tool]] = [
-    Tool(
-        name=model.__name__,
-        description=model.__doc__,
-        inputSchema=model.model_json_schema(),
+_TOOLS_AND_MODELS: Final[
+    list[
+        tuple[
+            Tool,
+            type[BaseLegalPrecedent],
+            type[StjLegalPrecedentsRequest]
+            | type[TstLegalPrecedentsRequest]
+            | type[StfLegalPrecedentsRequest],
+        ]
+    ]
+] = [
+    (
+        Tool(
+            name=request_model.__name__,
+            description=request_model.__doc__,
+            inputSchema=request_model.model_json_schema(),
+        ),
+        domain_model,
+        request_model,
     )
-    for model in [
-        StjLegalPrecedentsRequest,
-        TstLegalPrecedentsRequest,
-        StfLegalPrecedentsRequest,
+    for request_model, domain_model in [
+        (StjLegalPrecedentsRequest, StjLegalPrecedent),
+        (TstLegalPrecedentsRequest, TstLegalPrecedent),
+        (StfLegalPrecedentsRequest, StfLegalPrecedent),
     ]
 ]
 
 
-async def _list_tools() -> list["Tool"]:
-    return _TOOLS
+async def list_tools() -> list["Tool"]:
+    """List all tools available in the MCP server."""
+    return [i[0] for i in _TOOLS_AND_MODELS]
 
 
 async def call_tool(
@@ -356,15 +373,13 @@ async def call_tool(
     arguments: dict[str, "Any"],  # pyright: ignore[reportExplicitAny]
 ) -> list[TextContent]:
     """Handles a tool call from a MCP client."""
-    match name:
-        case StjLegalPrecedentsRequest.__name__:
-            request = StjLegalPrecedentsRequest(**arguments)  # pyright: ignore[reportAny]
-            method = StjLegalPrecedent.research
-        case TstLegalPrecedentsRequest.__name__:
-            request = TstLegalPrecedentsRequest(**arguments)  # pyright: ignore[reportAny]
-            method = TstLegalPrecedent.research
-        case _:
-            raise ValueError(f"Tool {name} not found")
+    for tool, domain_model, request_model in _TOOLS_AND_MODELS:
+        if tool.name == name:
+            request = request_model(**arguments)  # pyright: ignore[reportAny]
+            method = domain_model.research
+            break
+    else:
+        raise ValueError(f"Tool {name} not found")
 
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
@@ -389,7 +404,7 @@ async def call_tool(
 async def _serve() -> None:
     server = Server("brlaw_mcp_server")
 
-    server.list_tools()(_list_tools)
+    server.list_tools()(list_tools)
     server.call_tool()(call_tool)
 
     options = server.create_initialization_options()

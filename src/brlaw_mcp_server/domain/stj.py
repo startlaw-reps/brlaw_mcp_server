@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Self, override
 
 from patchright.async_api import TimeoutError
 
-from brlaw_mcp_server.domain._base import BaseLegalPrecedent
+from brlaw_mcp_server.domain.base import BaseLegalPrecedent
 
 if TYPE_CHECKING:
     from patchright.async_api import Locator, Page
