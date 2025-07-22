@@ -6,13 +6,13 @@ from typing import Any, Final
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
-from patchright.async_api import async_playwright
 from pydantic import BaseModel, Field
 
 from brlaw_mcp_server.domain.base import BaseLegalPrecedent
 from brlaw_mcp_server.domain.stf import StfLegalPrecedent
 from brlaw_mcp_server.domain.stj import StjLegalPrecedent
 from brlaw_mcp_server.domain.tst import TstLegalPrecedent
+from brlaw_mcp_server.utils import browser_factory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -390,8 +390,7 @@ async def call_tool(
         raise ValueError(f"Tool {name} not found")
 
     async with (
-        async_playwright() as playwright,
-        await playwright.chromium.launch(headless=True) as browser,
+        browser_factory(headless=True) as browser,
         await browser.new_page() as page,
     ):
         try:
