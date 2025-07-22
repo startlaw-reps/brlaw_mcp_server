@@ -1,5 +1,4 @@
 import asyncio
-from os import environ
 
 import pytest
 
@@ -28,21 +27,19 @@ from brlaw_mcp_server.utils import browser_factory
 @pytest.mark.parametrize(
     "class_", [StjLegalPrecedent, TstLegalPrecedent, StfLegalPrecedent]
 )
-@pytest.mark.parametrize("headless", [True] if "CI" in environ else [True, False])
 async def test_research_legal_precedents(
     summary: str,
     should_return_results: bool,
     class_: type[BaseLegalPrecedent],
-    headless: bool,
 ) -> None:
-    """Test the research method of the STJLegalPrecedent class.
+    """Test the research method of a legal precedent class.
 
     :param summary: The summary to search for.
     :param should_return_results: Whether the research should return results."""
 
     async with (
         asyncio.timeout(30),
-        browser_factory(headless=headless) as browser,
+        browser_factory() as browser,
     ):
         page = await browser.new_page()
 
