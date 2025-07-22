@@ -6,13 +6,19 @@ from patchright.async_api import async_playwright
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-    from patchright.async_api import Browser
+    from patchright.async_api import BrowserContext
 
 
 @asynccontextmanager
-async def browser_factory(headless: bool = True) -> "AsyncGenerator[Browser, None]":
+async def browser_factory(
+    headless: bool = True,
+) -> "AsyncGenerator[BrowserContext, None]":
     async with (
         async_playwright() as playwright,
         await playwright.chromium.launch(headless=headless) as browser,
     ):
-        yield browser
+        yield await browser.new_context(
+            extra_http_headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+            }
+        )
