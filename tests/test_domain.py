@@ -1,13 +1,12 @@
 import asyncio
-from os import environ
 
 import pytest
-from patchright.async_api import async_playwright
 
 from brlaw_mcp_server.domain.base import BaseLegalPrecedent
 from brlaw_mcp_server.domain.stf import StfLegalPrecedent
 from brlaw_mcp_server.domain.stj import StjLegalPrecedent
 from brlaw_mcp_server.domain.tst import TstLegalPrecedent
+from brlaw_mcp_server.utils import browser_factory
 
 
 @pytest.mark.parametrize(
@@ -33,16 +32,15 @@ async def test_research_legal_precedents(
     should_return_results: bool,
     class_: type[BaseLegalPrecedent],
 ) -> None:
-    """Test the research method of the STJLegalPrecedent class.
+    """Test the research method of a legal precedent class.
 
     :param summary: The summary to search for.
     :param should_return_results: Whether the research should return results."""
 
-    async with asyncio.timeout(30), async_playwright() as playwright:
-        browser = await playwright.chromium.launch(
-            headless="CI" in environ,
-        )
-
+    async with (
+        asyncio.timeout(30),
+        browser_factory() as browser,
+    ):
         page = await browser.new_page()
 
         for desired_results_page in range(1, 3):

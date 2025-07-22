@@ -12,18 +12,15 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class StfLegalPrecedent(BaseLegalPrecedent):
-    """A legal precedent from the Supremo Tribunal Federal (STF)."""
+    """A legal precedent from the Supreme Federal Court of Brazil (STF)."""
 
     @override
     @classmethod
     async def research(
         cls, browser: "Page", *, summary_search_prompt: str, desired_page: int = 1
     ) -> "list[Self]":
-        # Needed ahead to read the copied summaries.
-        await browser.context.grant_permissions(["clipboard-read"])
-
-        await browser.goto(
-            " https://jurisprudencia.stf.jus.br/pages/search?"
+        url = (
+            "https://jurisprudencia.stf.jus.br/pages/search?"
             + urllib.parse.urlencode(
                 {
                     "base": "acordaos",
@@ -36,10 +33,28 @@ class StfLegalPrecedent(BaseLegalPrecedent):
                     "pageSize": "10",
                     "queryString": summary_search_prompt,
                 }
-            ),
-            # Page keeps loading async.
-            wait_until="networkidle",
+            )
         )
+
+        response = await browser.goto(
+            url,
+            wait_until="networkidle",  # Page keeps loading async.
+        )
+
+        if response is None or response.status >= 300:  # noqa: PLR2004  # constant used only once.
+            _LOGGER.error(
+                "The server's response wasn't as expected",
+                extra={
+                    "browser_headers": await response.request.all_headers()
+                    if response
+                    else None,
+                    "request_url": url,
+                    "response_status": response.status if response else None,
+                    "response_content": await browser.content(),
+                },
+            )
+
+            raise RuntimeError("The server's response wasn't as expected")
 
         numbers_of_results_locators = await browser.locator(
             "div.mat-tooltip-trigger > span.ml-5.font-weight-500"
@@ -62,6 +77,9 @@ class StfLegalPrecedent(BaseLegalPrecedent):
         results_locators = await browser.locator("div[id^=result-index-]").all()
         if len(results_locators) == 0:
             raise RuntimeError("Failed to find the results when there are results")
+
+        # Needed ahead to read the copied summaries.
+        await browser.context.grant_permissions(["clipboard-read"])
 
         return_value: list[Self] = []
         for result_locator in results_locators:
