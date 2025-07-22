@@ -18,8 +18,8 @@ async def test_listed_tools() -> None:
         assert tool.description is not None
         assert tool.inputSchema is not None
 
-        # It is expected that all tools will raise a ValidationError if no arguments are provided,
-        # because all of them expect at least one argument.
+        # Currently all tools expect one argument at least, thus it is expected that every tool
+        # will raise a ValidationError if none are provided.
         with pytest.raises(ValidationError):
             await call_tool(tool.name, {})
 

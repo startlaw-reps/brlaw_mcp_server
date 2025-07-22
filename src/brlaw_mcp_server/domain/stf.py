@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class StfLegalPrecedent(BaseLegalPrecedent):
-    """A legal precedent from the Supremo Tribunal Federal (STF)."""
+    """A legal precedent from the Supreme Federal Court of Brazil (STF)."""
 
     @override
     @classmethod
@@ -45,12 +45,25 @@ class StfLegalPrecedent(BaseLegalPrecedent):
             "div.mat-tooltip-trigger > span.ml-5.font-weight-500"
         ).all()
 
-        if len(numbers_of_results_locators) == 0:
-            raise RuntimeError("Failed to get the number of results")
+        try:
+            if len(numbers_of_results_locators) == 0:
+                raise RuntimeError("Failed to get the number of results")
 
-        txt_numbers_of_precedents = await numbers_of_results_locators[0].text_content()
-        if txt_numbers_of_precedents is None:
-            raise RuntimeError("Failed to get the number of results")
+            txt_numbers_of_precedents = await numbers_of_results_locators[
+                0
+            ].text_content()
+            if txt_numbers_of_precedents is None:
+                raise RuntimeError("Failed to get the number of results")
+
+        except Exception:
+            _LOGGER.exception(
+                "Error getting the number of results",
+                extra={
+                    "summary_search_prompt": summary_search_prompt,
+                    "page_source": await browser.content(),
+                },
+            )
+            raise
 
         numbers_of_precedents = int(
             txt_numbers_of_precedents.strip("() ").replace(".", "")
