@@ -1,8 +1,10 @@
 import asyncio
 import logging
+import socket
 import textwrap
 from typing import Any, Final
 
+import click
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
@@ -23,14 +25,14 @@ class BaseLegalPrecedentsRequest(BaseModel):
     page: int = Field(
         title="Página",
         description=textwrap.dedent("""
-            A página dos resultados a ser retornada. 
-            
-            Cada página contém uma fração dos resultados da pesquisa. A página 1 é a primeira 
+            A página dos resultados a ser retornada.
+
+            Cada página contém uma fração dos resultados da pesquisa. A página 1 é a primeira
             página dos resultados.
 
             É útil requisitar mais de uma página para conseguir mais informações, se necessário.
-            Por exemplo, se os resultados retornados pela página anteriormente requisitada forem 
-            pertinentes, mas não satisfatórios, é adequado requisitar a página seguinte para obter 
+            Por exemplo, se os resultados retornados pela página anteriormente requisitada forem
+            pertinentes, mas não satisfatórios, é adequado requisitar a página seguinte para obter
             mais precedentes relacionados."""),
         ge=1,
         default=1,
@@ -59,7 +61,7 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
         description=textwrap.dedent("""
         Critérios que serão buscados na ementa das decisões desejadas.
 
-        É possível utilizar operadores textuais para aumentar a assertividade da busca. Na ausência 
+        É possível utilizar operadores textuais para aumentar a assertividade da busca. Na ausência
         de qualquer operador explícito entre duas palavras, o sistema presumirá o operador `e`.
         Ou seja, `supermercado furto veículo` é o mesmo que `supermercado e furto e veículo`.
 
@@ -69,11 +71,11 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: supermercado e furto e veículo
 
-        RESULTADO: o sistema buscará documentos que contenham as três palavras, em qualquer ordem ou 
+        RESULTADO: o sistema buscará documentos que contenham as três palavras, em qualquer ordem ou
         distância.
 
-        ATENÇÃO: esse é o operador presumido entre duas palavras, quando não houver outro operador 
-        explícito. Assim, não é necessário explicitá-lo nesses casos. Por exemplo, `supermercado e 
+        ATENÇÃO: esse é o operador presumido entre duas palavras, quando não houver outro operador
+        explícito. Assim, não é necessário explicitá-lo nesses casos. Por exemplo, `supermercado e
         furto` é o mesmo que `supermercado furto`.
 
         ### `ou`
@@ -88,7 +90,7 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: (seguro não automóvel)
 
-        RESULTADO: o sistema buscará apenas os documentos que contenham a palavra “seguro”, mas 
+        RESULTADO: o sistema buscará apenas os documentos que contenham a palavra “seguro”, mas
         excluirá do resultado aqueles que tragam a palavra “automóvel”.
 
         ### `mesmo`
@@ -96,26 +98,26 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: (FGTS mesmo súmula mesmo civil)
 
-        RESULTADO: o sistema buscará os documentos que contenham as três palavras indicadas, em 
+        RESULTADO: o sistema buscará os documentos que contenham as três palavras indicadas, em
         qualquer ordem ou distância, dentro de um mesmo campo.
 
         ### `com`
         Localiza termos em um mesmo parágrafo.
-        
+
         EXEMPLO: recurso com STJ com furto com veículo
 
-        RESULTADO: o sistema buscará os documentos que contenham as quatro palavras em qualquer 
+        RESULTADO: o sistema buscará os documentos que contenham as quatro palavras em qualquer
         ordem ou distância, dentro do mesmo parágrafo.
 
         ## Operadores de proximidade
         ### `PROX(N)`
-        Localiza termos PROXimos, em qualquer ordem. (N) limita a distância entre os termos pesquisados. 
+        Localiza termos PROXimos, em qualquer ordem. (N) limita a distância entre os termos pesquisados.
         O segundo termo poderá ser até a enésima palavra antes ou depois do primeiro termo.
 
         EXEMPLO: nega prox2 provimento prox5 recursos
 
-        RESULTADO: O sistema buscará os documentos que contenham as três palavras em qualquer ordem, 
-        até a distância determinada. No exemplo, serão recuperadas as expressões: “recursos a que se 
+        RESULTADO: O sistema buscará os documentos que contenham as três palavras em qualquer ordem,
+        até a distância determinada. No exemplo, serão recuperadas as expressões: “recursos a que se
         nega provimento” “nega-se provimento ao recurso” “recursos especiais a que se nega provimento”
 
         ### `ADJ(N)`
@@ -125,13 +127,13 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: causa adj3 aumento adj2 pena
 
-        RESULTADO: O sistema buscará os documentos que contenham as três palavras, na ordem digitada, 
-        até a distância delimitada. Serão resgatadas expressões como: “Causa de aumento de pena” 
+        RESULTADO: O sistema buscará os documentos que contenham as três palavras, na ordem digitada,
+        até a distância delimitada. Serão resgatadas expressões como: “Causa de aumento de pena”
         “causas especiais de aumento de pena”
 
         ## Símbolos auxiliares
         ### `$`
-        Substitui vários caracteres, podendo vir no início, meio ou fim da palavra. É possível 
+        Substitui vários caracteres, podendo vir no início, meio ou fim da palavra. É possível
         limitar o número máximo de caracteres utilizando valores numéricos.
 
         EXEMPLO 1: constitui$
@@ -151,7 +153,7 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
         RESULTADO 4: PG; Para; PAR; Pode; Pena.
 
         ### `?`
-        Substitui um único carácter, podendo vir no início, meio ou fim da palavra. Cada 
+        Substitui um único carácter, podendo vir no início, meio ou fim da palavra. Cada
         interrogação corresponde a um carácter.
 
         EXEMPLO: d?sc?r??
@@ -159,21 +161,21 @@ class StjLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
         RESULTADO: Deserção; Descrição; designação; descrição.
 
         ### `( )`
-        Usado para o operador OU e para agrupar itens da pesquisa. A alteração poderá ser feita 
+        Usado para o operador OU e para agrupar itens da pesquisa. A alteração poderá ser feita
         manualmente.
 
         EXEMPLO: ((menor ou criança) e infrator) com pena
 
-        RESULTADO: o sistema buscará os documentos que contenham as combinações: menor e infrator 
+        RESULTADO: o sistema buscará os documentos que contenham as combinações: menor e infrator
         com pena ou criança e infrator com pena
 
         ### `" "`
-        Utilizado para transformar um operador em palavra a ser pesquisada e para localizar expressões 
+        Utilizado para transformar um operador em palavra a ser pesquisada e para localizar expressões
         exatas.
 
         EXEMPLO: “não” adj previsto “tribunal de origem”
 
-        RESULTADO: o sistema buscará documentos que contenham a expressão “não previsto”. O sistema 
+        RESULTADO: o sistema buscará documentos que contenham a expressão “não previsto”. O sistema
         buscará documentos que contenham a expressão “tribunal de origem”."""),
         min_length=1,
         examples=[
@@ -203,7 +205,7 @@ class TstLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
         description=textwrap.dedent("""
         Critérios que serão buscados na ementa das decisões desejadas.
 
-        É admitido o uso de aspas e elas devem ser empregadas para pesquisas exatas de expressões ou 
+        É admitido o uso de aspas e elas devem ser empregadas para pesquisas exatas de expressões ou
         palavras compostas."""),
         min_length=1,
         examples=[
@@ -233,7 +235,7 @@ class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
         description=textwrap.dedent("""
         Critérios que serão buscados na ementa das decisões desejadas.
 
-        É possível utilizar operadores textuais para aumentar a assertividade da busca. Na ausência 
+        É possível utilizar operadores textuais para aumentar a assertividade da busca. Na ausência
         de qualquer operador explícito entre duas palavras, o sistema presumirá o operador `e`.
         Ou seja, `supermercado furto veículo` é o mesmo que `supermercado e furto e veículo`.
 
@@ -242,7 +244,7 @@ class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: direitos E humanos
 
-        ATENÇÃO: por se tratar do operador padrão, não é necessário explicitar o E na expressão de 
+        ATENÇÃO: por se tratar do operador padrão, não é necessário explicitar o E na expressão de
         busca.
 
         ## `ou`
@@ -255,7 +257,7 @@ class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: prisão NÃO preventiva
 
-        EFEITO: no caso do exemplo, o sistema buscará documentos que envolvam prisões que NÃO sejam 
+        EFEITO: no caso do exemplo, o sistema buscará documentos que envolvam prisões que NÃO sejam
         preventivas.
 
         ## `" "`
@@ -263,36 +265,36 @@ class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: "princípio da presunção de inocência"
 
-        ATENÇÃO: os operadores contidos dentro das aspas perdem a função de operador lógico. Assim, 
+        ATENÇÃO: os operadores contidos dentro das aspas perdem a função de operador lógico. Assim,
         `"direitos E humanos"` não é o mesmo que `direitos E humanos`.
 
         ## `" "~`
-        Os termos podem aparecer no documento em qualquer ordem, desde que estejam separados, no 
+        Os termos podem aparecer no documento em qualquer ordem, desde que estejam separados, no
         máximo, pelo número de palavras indicado após o til.
 
         EXEMPLO: "provimento cargo"~5
 
-        EFEITO: no caso do exemplo, o sistema buscará quaisquer documentos que contenham as palavras 
-        `provimento` e `cargo` separadas por entre zero e cinco palavras. As seguintes expressões 
+        EFEITO: no caso do exemplo, o sistema buscará quaisquer documentos que contenham as palavras
+        `provimento` e `cargo` separadas por entre zero e cinco palavras. As seguintes expressões
         seriam consideradas válidas:
         - provimento cargo
         - cargo provimento
         - provimento de cargo
         - cargo teve o seu provimento
 
-        ATENÇÃO: dentro dessa estrutura (aspas duplas + til), os únicos operadores admitidos são o 
+        ATENÇÃO: dentro dessa estrutura (aspas duplas + til), os únicos operadores admitidos são o
         `OU` e os parênteses; todos os demais (`E`, `NÃO`, `~`, `$`, `?`) são anulados.
 
         ## `~`
-        Quando posicionado logo após determinada palavra, o til permite o resgate de documentos que 
+        Quando posicionado logo após determinada palavra, o til permite o resgate de documentos que
         contenham pequenas variações do termo pesquisado.
 
-        O número de variações toleradas depende do número de caracteres do termo pesquisado: 
+        O número de variações toleradas depende do número de caracteres do termo pesquisado:
         - até 3 caracteres, o operador til não produz efeito
         - entre 4 e 6 caracteres, o operador admite 1 variação
         - com mais de 6 caracteres, a busca contempla 2 variações
 
-        Conta-se como 1 variação: 
+        Conta-se como 1 variação:
         - a troca de um caractere por outro (exemplo: de triagem para friagem)
         - a remoção de um caractere (exemplo: de místico para mítico)
         - a inserção de um caractere (exemplo: de recorre para recorrer)
@@ -300,8 +302,8 @@ class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
 
         EXEMPLO: amaldiçoado~
 
-        EFEITO: no caso do exemplo, o sistema buscará documentos que contenham a palavra 
-        `amaldiçoado` e outras que possam ser criadas a partir de até duas variações, pois a 
+        EFEITO: no caso do exemplo, o sistema buscará documentos que contenham a palavra
+        `amaldiçoado` e outras que possam ser criadas a partir de até duas variações, pois a
         palavra-base tem mais de 6 caracteres. As seguintes expressões seriam consideradas válidas:
         - amaldiçoado
         - amaldiçoados
@@ -309,24 +311,24 @@ class StfLegalPrecedentsRequest(BaseLegalPrecedentsRequest):
         - amaldiçoadas
 
         ## `$`
-        O sinal de dólar substitui um, nenhum ou mais de um caractere no início, no meio ou no final 
+        O sinal de dólar substitui um, nenhum ou mais de um caractere no início, no meio ou no final
         do termo.
 
         EXEMPLO: $classificado
 
         ## `?`
-        O ponto de interrogação substitui um único caractere no início, no meio ou no final do 
+        O ponto de interrogação substitui um único caractere no início, no meio ou no final do
         termo.
 
         EXEMPLO: RE 56394?
 
         ## `( )`
-        Os parênteses indicam a ordem de prioridade das operações, quando utilizado mais de um 
+        Os parênteses indicam a ordem de prioridade das operações, quando utilizado mais de um
         operador.
 
         EXEMPLO: direito E (privacidade OU intimidade)
 
-        EFEITO: no caso do exemplo, o sistema buscará documentos que contenham tanto a palavra 
+        EFEITO: no caso do exemplo, o sistema buscará documentos que contenham tanto a palavra
         `direito` quanto uma das duas palavras `privacidade` ou `intimidade`."""),
         min_length=1,
         examples=[
@@ -413,7 +415,8 @@ async def call_tool(
     )
 
 
-async def _serve() -> None:
+async def _serve_stdio() -> None:
+    """Serve MCP over stdio (default behavior)."""
     server = Server("brlaw_mcp_server")
 
     server.list_tools()(list_tools)
@@ -425,6 +428,73 @@ async def _serve() -> None:
         await server.run(read_stream, write_stream, options, raise_exceptions=True)
 
 
-def serve() -> None:
+async def _serve_tcp(host: str, port: int) -> None:
+    """Serve MCP over TCP network connection."""
+    server = Server("brlaw_mcp_server")
+
+    server.list_tools()(list_tools)
+    server.call_tool()(call_tool)
+
+    options = server.create_initialization_options()
+
+    # Create TCP server
+    tcp_server = await asyncio.start_server(
+        lambda reader, writer: _handle_client(server, options, reader, writer),
+        host,
+        port
+    )
+
+    _LOGGER.info(f"MCP server listening on {host}:{port}")
+
+    try:
+        async with tcp_server:
+            await tcp_server.serve_forever()
+    except KeyboardInterrupt:
+        _LOGGER.info("Shutting down MCP server...")
+
+
+async def _handle_client(server: Server, options: dict, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    """Handle a single TCP client connection."""
+    client_addr = writer.get_extra_info('peername')
+    _LOGGER.info(f"Client connected from {client_addr}")
+
+    try:
+        # Create a simple transport that bridges TCP to MCP
+        class TCPTransport:
+            def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+                self.reader = reader
+                self.writer = writer
+
+            async def read(self) -> bytes:
+                data = await self.reader.readline()
+                return data
+
+            async def write(self, data: bytes) -> None:
+                self.writer.write(data)
+                await self.writer.drain()
+
+        transport = TCPTransport(reader, writer)
+
+        # Run the MCP server with this transport
+        await server.run(transport, transport, options, raise_exceptions=True)
+
+    except Exception as e:
+        _LOGGER.exception(f"Error handling client {client_addr}: {e}")
+    finally:
+        writer.close()
+        await writer.wait_closed()
+        _LOGGER.info(f"Client {client_addr} disconnected")
+
+
+@click.command()
+@click.option('--tcp', is_flag=True, help='Run server over TCP instead of stdio')
+@click.option('--host', default='0.0.0.0', help='Host to bind to (TCP mode only)')
+@click.option('--port', default=8000, help='Port to bind to (TCP mode only)')
+def serve(tcp: bool, host: str, port: int) -> None:
     """Starts the MCP server."""
-    asyncio.run(_serve())
+    if tcp:
+        _LOGGER.info(f"Starting MCP server in TCP mode on {host}:{port}")
+        asyncio.run(_serve_tcp(host, port))
+    else:
+        _LOGGER.info("Starting MCP server in stdio mode")
+        asyncio.run(_serve_stdio())
